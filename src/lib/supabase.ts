@@ -9,10 +9,31 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const isConfigured = Boolean(url && anonKey);
 
+// Some embedded/preview contexts (e.g. a sandboxed iframe) block localStorage entirely —
+// accessing it can throw synchronously and crash the whole app before it renders. Detect
+// that up front and fall back to an in-memory store rather than let it take the app down.
+function createAuthStorage() {
+  if (Platform.OS !== 'web') return AsyncStorage;
+  try {
+    const testKey = '__sm_storage_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return AsyncStorage;
+  } catch {
+    console.warn('Skin Mirror: localStorage is unavailable here, using in-memory session storage.');
+    const memory = new Map<string, string>();
+    return {
+      getItem: async (key: string) => memory.get(key) ?? null,
+      setItem: async (key: string, value: string) => void memory.set(key, value),
+      removeItem: async (key: string) => void memory.delete(key),
+    };
+  }
+}
+
 // Only the public anon key lives in the app. The Claude API key stays on the server.
 export const supabase = createClient(url ?? 'https://example.supabase.co', anonKey ?? 'missing-key', {
   auth: {
-    storage: AsyncStorage,
+    storage: createAuthStorage(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
