@@ -1,56 +1,68 @@
-# Welcome to your Expo app 👋
+# Skin Mirror
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AI skin analysis and skincare habit app (Expo / React Native + Supabase + Claude).
 
-## Get started
+Users take three guided face photos; Claude analyses visible cosmetic concerns (dark spots, uneven tone,
+texture, fine lines, breakouts…) on a 1–5 scale, checks photo quality, and flags anything that should be
+seen by a pharmacist or doctor instead of treated with skincare.
 
-1. Install dependencies
+## What's built (Phase 1)
 
-   ```bash
-   npm install
-   ```
+| Area | Where |
+|---|---|
+| Welcome → email-code sign-in → consent (18+, photo consent) → skin profile | `src/app/welcome.tsx`, `sign-in.tsx`, `consent.tsx`, `profile-setup.tsx` |
+| Guided 3-angle camera capture with face oval, or pick from library | `src/app/scan.tsx` |
+| Photos resized + EXIF stripped on device, uploaded to a private bucket | `src/lib/scan.ts` |
+| Claude analysis (server-side only), structured output, safety rules, daily limit | `supabase/functions/analyze-skin`, `supabase/functions/_shared/analysis.ts` |
+| Results: quality/retake, referral card, findings with severity | `src/app/result/[id].tsx` |
+| Today, History, Settings (edit profile, sign out, delete account + all photos) | `src/app/(tabs)/` |
+| Database, row-level security, storage policies | `supabase/migrations/` |
 
-2. Start the app
+Next phases (see the product plan): routine builder + daily checklist + reminders + streaks → progress
+comparison + weekly recap → coach chat + label scanner → shopping.
 
-   ```bash
-   npx expo start
-   ```
+## Setup
 
-In the output, you'll find options to open the app in a
+### 1. Supabase (can be done in the browser)
+1. Create a project at [supabase.com](https://supabase.com). Pick an EU/UK region if most users are there.
+2. **SQL Editor** → paste and run `supabase/migrations/20260925000000_init.sql`.
+3. **Authentication → Emails → Magic Link template**: make sure the body includes `{{ .Token }}` so users
+   receive a 6-digit code (e.g. `Your Skin Mirror code is {{ .Token }}`).
+4. **Project Settings → API**: copy the URL and anon/publishable key into `.env` (see `.env.example`).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 2. Server functions (needs a computer with Node)
 ```bash
-npm run reset-project
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...   # from console.anthropic.com
+npx supabase functions deploy analyze-skin
+npx supabase functions deploy delete-account
+```
+Optional secrets: `CLAUDE_MODEL` (default `claude-sonnet-5`), `DAILY_SCAN_LIMIT` (default `10`).
+
+### 3. Run the app
+```bash
+npm install
+cp .env.example .env    # then fill it in
+npx expo start
+```
+Scan the QR code with **Expo Go** on your phone (camera, image picker and image manipulator all work in
+Expo Go). For a standalone build: `npx eas-cli@latest build --profile development`.
+
+## Checks
+```bash
+npm test          # analysis safety/normalisation tests
+npm run typecheck
+npx expo lint
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Safety & privacy decisions
+- Positioned as **cosmetic** guidance, not diagnosis. The model is told never to name diseases or medicines;
+  rashes, irregular moles, infection signs, severe acne and swelling become red flags with a
+  pharmacist / GP / urgent referral. Get a regulatory review (MHRA, EU MDR, FDA) before launch.
+- Face photos are treated as sensitive data: explicit consent screen, private bucket with per-user
+  policies, EXIF stripped, signed URLs that expire in 10 minutes, one-tap account + photo deletion.
+- Adults only (birth-year gate, and the model refuses photos that appear to show someone under 18).
+- The Claude API key only exists as a Supabase secret; the app never sees it.
+- The analysis prompt asks for fair assessment across all skin tones. Build an evaluation set of consented
+  photos across skin tones before launch and re-run it after every prompt change.

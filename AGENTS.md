@@ -39,3 +39,11 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Skin Mirror project notes
+
+- Backend is Supabase: SQL in `supabase/migrations/`, Edge Functions (Deno) in `supabase/functions/`. Use `npm:` imports in functions (not `jsr:`).
+- Claude is only ever called from Edge Functions. Never put an Anthropic key in the app or in `EXPO_PUBLIC_*` vars.
+- `supabase/functions/_shared/analysis.ts` is pure TypeScript shared by the function, the app's types and `npm test`. Keep it dependency-free.
+- Keep the product positioned as cosmetic skincare: no disease names, no medicines, red flags refer out. Don't weaken these rules or the tests that guard them.
+- Before finishing: `npm test`, `npm run typecheck`, `npx expo lint`, and `deno check` on changed functions.
