@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Platform } from 'react-native';
 
-import { Button, Card, Screen, T } from '@/components/ui';
+import { Button, Card, Screen, SwitchRow, T } from '@/components/ui';
 import { useTheme } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
 import { SKIN_TYPES } from '@/lib/labels';
+import { requestNotificationPermission, syncReminders } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 
 function confirm(title: string, message: string): Promise<boolean> {
@@ -20,9 +21,23 @@ function confirm(title: string, message: string): Promise<boolean> {
 
 export default function Settings() {
   const c = useTheme();
-  const { session, profile, signOut } = useAuth();
+  const { session, profile, signOut, updateProfile } = useAuth();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function setReminder(period: 'am' | 'pm', enabled: boolean) {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        setError('Turn on notifications for Skin Mirror in your phone Settings to get reminders.');
+        return;
+      }
+    }
+    const am = period === 'am' ? enabled : (profile?.am_reminder ?? true);
+    const pm = period === 'pm' ? enabled : (profile?.pm_reminder ?? true);
+    await updateProfile({ [period === 'am' ? 'am_reminder' : 'pm_reminder']: enabled });
+    await syncReminders(am, pm);
+  }
 
   async function deleteAccount() {
     const ok = await confirm(
@@ -59,6 +74,22 @@ export default function Settings() {
           {profile?.sensitivities.length ? ` · Reacts to ${profile.sensitivities.join(', ')}` : ''}
         </T>
         <Button title="Edit profile" variant="secondary" onPress={() => router.push('/profile-setup')} />
+      </Card>
+
+      <Card>
+        <T variant="heading">Reminders</T>
+        <SwitchRow
+          label="Morning routine"
+          hint="8:00 AM"
+          value={profile?.am_reminder ?? true}
+          onChange={(v) => setReminder('am', v)}
+        />
+        <SwitchRow
+          label="Evening routine"
+          hint="9:00 PM"
+          value={profile?.pm_reminder ?? true}
+          onChange={(v) => setReminder('pm', v)}
+        />
       </Card>
 
       <Card>

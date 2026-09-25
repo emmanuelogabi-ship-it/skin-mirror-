@@ -4,6 +4,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch as RNSwitch,
   Text,
   type TextProps,
   View,
@@ -135,6 +136,34 @@ export function CheckRow({ checked, onToggle, children }: { checked: boolean; on
       </View>
       <View style={{ flex: 1 }}>{children}</View>
     </Pressable>
+  );
+}
+
+export function SwitchRow({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const c = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.xs }}>
+      <View style={{ flex: 1 }}>
+        <T variant="heading">{label}</T>
+        {hint ? <T variant="small" muted>{hint}</T> : null}
+      </View>
+      <RNSwitch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: c.border, true: c.accent }}
+        thumbColor="#fff"
+      />
+    </View>
   );
 }
 

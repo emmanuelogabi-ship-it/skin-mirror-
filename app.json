@@ -49,6 +49,12 @@
         {
           "photosPermission": "Skin Mirror lets you choose existing face photos for analysis."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#2F5D50"
+        }
       ]
     ],
     "experiments": {
