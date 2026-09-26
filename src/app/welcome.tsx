@@ -5,7 +5,7 @@ import { Button, Screen, T } from '@/components/ui';
 import { Radius, Spacing, useTheme } from '@/constants/theme';
 
 const POINTS = [
-  { title: 'Scan', body: 'Three quick photos. Our AI maps what’s visible — spots, tone, texture, lines.' },
+  { title: 'Scan', body: 'One short video, turning your head. Our AI maps what’s visible — spots, tone, texture, lines.' },
   { title: 'Understand', body: 'Plain-English results, rated on a simple 1–5 scale you can track.' },
   { title: 'Improve', body: 'A routine that fits your skin, and progress you can actually see.' },
 ];

@@ -145,7 +145,7 @@ export default function Today() {
         <T variant="small" muted>
           {latest
             ? 'A scan a week, in the same light, shows your progress most clearly.'
-            : 'Three quick photos in good light. Takes about a minute.'}
+            : 'One short video, turning your head. Takes about a minute.'}
         </T>
         <Button title="Start a scan" onPress={() => router.push('/scan')} />
       </Card>

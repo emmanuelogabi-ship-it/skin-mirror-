@@ -7,12 +7,15 @@ import type { ScanWithFindings } from './types';
 export const MAX_PHOTOS = 5;
 const TARGET_WIDTH = 1280; // plenty of detail for Claude, small enough to upload fast
 
+/** Whatever `ImageManipulator.manipulate()` accepts: a file uri, or a native image ref (e.g. a video frame). */
+export type ManipulatableImage = Parameters<typeof ImageManipulator.manipulate>[0];
+
 /**
  * Resize and re-encode a photo as JPEG. Re-encoding also strips EXIF metadata
  * (GPS location, device details) before anything leaves the phone.
  */
-export async function preparePhoto(uri: string, width: number): Promise<string> {
-  const ctx = ImageManipulator.manipulate(uri);
+export async function preparePhoto(source: ManipulatableImage, width: number): Promise<string> {
+  const ctx = ImageManipulator.manipulate(source);
   if (width > TARGET_WIDTH) ctx.resize({ width: TARGET_WIDTH, height: null });
   const image = await ctx.renderAsync();
   const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.82, base64: true });
@@ -28,13 +31,13 @@ export interface AnalysisResponse {
 /** Create a scan, upload its photos to private storage, then ask the server to analyse it. */
 export async function createAndAnalyzeScan(
   userId: string,
-  photos: { uri: string; width: number }[],
+  photos: { source: ManipulatableImage; width: number }[],
   onStage?: (stage: 'preparing' | 'uploading' | 'analysing') => void,
 ): Promise<string> {
   if (photos.length < 1 || photos.length > MAX_PHOTOS) throw new Error('Add 1–5 photos');
 
   onStage?.('preparing');
-  const encoded = await Promise.all(photos.map((p) => preparePhoto(p.uri, p.width)));
+  const encoded = await Promise.all(photos.map((p) => preparePhoto(p.source, p.width)));
 
   onStage?.('uploading');
   const { data: scan, error: scanError } = await supabase

@@ -1,9 +1,10 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Card, Screen, T } from '@/components/ui';
-import { useTheme } from '@/constants/theme';
+import { Button, Card, Screen, T } from '@/components/ui';
+import { Radius, Spacing, useTheme } from '@/constants/theme';
 import { CONCERN_LABELS } from '@/lib/labels';
 import { fetchScans } from '@/lib/scan';
 import type { ScanWithFindings } from '@/lib/types';
@@ -21,7 +22,26 @@ export default function History() {
   return (
     <Screen edges={['top']}>
       <T variant="display">History</T>
-      {scans && scans.length === 0 ? <T muted>Your scans will appear here.</T> : null}
+      {scans && scans.length === 0 ? (
+        <View style={{ alignItems: 'center', paddingTop: Spacing.xxl, gap: Spacing.sm }}>
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: Radius.lg,
+              backgroundColor: c.accentSoft,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Ionicons name="images-outline" size={32} color={c.accent} />
+          </View>
+          <T variant="heading" style={{ textAlign: 'center' }}>No scans yet</T>
+          <T variant="small" muted style={{ textAlign: 'center', maxWidth: 260 }}>
+            Once you take a scan, it’ll show up here so you can track how your skin changes over time.
+          </T>
+          <Button title="Start a scan" onPress={() => router.push('/scan')} style={{ marginTop: Spacing.sm }} />
+        </View>
+      ) : null}
       {scans?.map((s) => {
         const top = [...s.scan_findings].sort((a, b) => b.severity - a.severity).slice(0, 3);
         return (

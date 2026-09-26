@@ -15,10 +15,30 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+// Dev-only: set EXPO_PUBLIC_DEV_SKIP_AUTH=true in .env to bypass sign-in and land straight in
+// the app with a fake completed profile, for UI preview before Supabase is fully wired up.
+const DEV_SKIP_AUTH = process.env.EXPO_PUBLIC_DEV_SKIP_AUTH === 'true';
+const DEV_PROFILE: Profile = {
+  id: 'dev-user',
+  display_name: 'Dev Preview',
+  birth_year: 1995,
+  skin_type: 'combination',
+  sensitivities: [],
+  pregnant_or_breastfeeding: false,
+  budget: 'medium',
+  timezone: null,
+  terms_accepted_at: new Date().toISOString(),
+  photo_consent_at: new Date().toISOString(),
+  am_reminder: false,
+  pm_reminder: false,
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(
+    DEV_SKIP_AUTH ? ({ user: { id: 'dev-user' } } as Session) : null,
+  );
+  const [profile, setProfile] = useState<Profile | null>(DEV_SKIP_AUTH ? DEV_PROFILE : null);
+  const [loading, setLoading] = useState(!DEV_SKIP_AUTH);
 
   const loadProfile = useCallback(async (userId: string | undefined) => {
     if (!userId) {
@@ -30,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (DEV_SKIP_AUTH) return;
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       await loadProfile(data.session?.user.id);

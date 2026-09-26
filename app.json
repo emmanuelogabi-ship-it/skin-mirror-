@@ -39,7 +39,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Skin Mirror uses your camera to take photos of your skin for analysis and progress tracking.",
+          "cameraPermission": "Skin Mirror uses your camera to record a short scan of your skin for analysis and progress tracking.",
+          "microphonePermission": "Skin Mirror does not use audio. This permission exists only because video recording requires it.",
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": false
         }
@@ -55,7 +56,8 @@
         {
           "color": "#2F5D50"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
